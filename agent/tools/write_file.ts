@@ -2,7 +2,6 @@ import { defineTool } from "eve/tools";
 import { writeFile } from "eve/tools/write_file";
 
 import { requireProjectMutationApproval } from "../lib/approval-policy";
-
 import { trackTool } from "@/lib/analytics/tool-tracker";
 
 export default defineTool({

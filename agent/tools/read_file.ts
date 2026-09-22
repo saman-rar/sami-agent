@@ -2,7 +2,6 @@ import { defineTool } from "eve/tools";
 import { readFile } from "eve/tools/read_file";
 
 import { requireProjectMutationApproval } from "../lib/approval-policy";
-
 import { trackTool } from "@/lib/analytics/tool-tracker";
 
 export default defineTool({
