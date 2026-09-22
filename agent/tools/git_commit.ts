@@ -1,7 +1,10 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
-import { requireProjectMutationApproval } from "../lib/approval-policy";
 import { shellArgs, shellQuote } from "../lib/shell";
+
+import { requireProjectMutationApproval } from "../lib/approval-policy";
+
+import { trackTool } from "@/lib/analytics/tool-tracker";
 
 export default defineTool({
   description:
@@ -15,11 +18,11 @@ export default defineTool({
       .describe("Repository-relative paths to stage. Omit to stage all working-tree changes."),
   }),
   approval: requireProjectMutationApproval,
-  async execute({ message, paths }, ctx) {
+  execute: trackTool("git_commit", async ({ message, paths }, ctx) => {
     const sandbox = await ctx.getSandbox();
     const stage = paths?.length ? `git add -- ${shellArgs(paths)}` : "git add -A";
     return sandbox.run({
       command: `${stage} && git commit -m ${shellQuote(message)}`,
     });
-  },
+  }),
 });

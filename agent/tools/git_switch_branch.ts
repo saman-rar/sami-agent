@@ -1,7 +1,9 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
+
 import { requireProjectMutationApproval } from "../lib/approval-policy";
-import { shellQuote } from "../lib/shell";
+
+import { trackTool } from "@/lib/analytics/tool-tracker";
 
 export default defineTool({
   description:
@@ -11,12 +13,12 @@ export default defineTool({
     create: z.boolean().default(false),
   }),
   approval: requireProjectMutationApproval,
-  async execute({ branch, create }, ctx) {
+  execute: trackTool("git_switch_branch", async ({ branch, create }, ctx) => {
     const sandbox = await ctx.getSandbox();
     return sandbox.run({
       command: create
-        ? `git switch -c ${shellQuote(branch)}`
-        : `git switch ${shellQuote(branch)}`,
+        ? `git switch -c ${branch}`
+        : `git switch ${branch}`,
     });
-  },
+  }),
 });

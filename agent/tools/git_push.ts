@@ -1,8 +1,11 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
+
 import { requireProjectMutationApproval } from "../lib/approval-policy";
 import { refreshGitHubCredentialBroker } from "../lib/github-broker";
 import { shellQuote } from "../lib/shell";
+
+import { trackTool } from "@/lib/analytics/tool-tracker";
 
 export default defineTool({
   description:
@@ -12,11 +15,11 @@ export default defineTool({
     setUpstream: z.boolean().default(true),
   }),
   approval: requireProjectMutationApproval,
-  async execute({ remote, setUpstream }, ctx) {
+  execute: trackTool("git_push", async ({ remote, setUpstream }, ctx) => {
     await refreshGitHubCredentialBroker(ctx);
     const sandbox = await ctx.getSandbox();
     return sandbox.run({
-      command: `git push${setUpstream ? " --set-upstream" : ""} ${shellQuote(remote)} HEAD`,
+      command: `git push${setUpstream ? " --set-upstream" : ""} ${remote} HEAD`,
     });
-  },
+  }),
 });

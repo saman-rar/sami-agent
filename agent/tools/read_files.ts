@@ -1,6 +1,8 @@
 import { defineTool } from "eve/tools";
 import { readFile } from "eve/tools/read_file";
 
+import { trackTool } from "@/lib/analytics/tool-tracker";
+
 export default defineTool({
   description:
     "Read multiple project files in one operation. Prefer this instead of several sequential read_file calls when related files are already known.",
@@ -15,7 +17,7 @@ export default defineTool({
     },
     required: ["files"],
   },
-  execute: async ({ files }: { files: string[] }, ctx) => {
+  execute: trackTool("read_files", async ({ files }: { files: string[] }, ctx) => {
     const results = [];
 
     for (const file of files.slice(0, 20)) {
@@ -38,5 +40,5 @@ export default defineTool({
     return {
       files: results,
     };
-  },
+  }),
 });
