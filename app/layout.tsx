@@ -6,6 +6,23 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { DEFAULT_THEME, THEME_STORAGE_KEY } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import './globals.css';
+import {
+  Sidebar,
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/app-sidebar';
+import { AccountControl, SignIn } from './_components/web-chat-auth';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
+import { isConfiguredOwner } from '@/lib/persistence/single-owner';
+import {
+  listSavedSessions,
+  restoreWorkspaceState,
+} from '@/lib/sessions/service';
+import { redirect } from 'next/navigation';
+import { listProjects } from '@/lib/projects/service';
 
 const sans = Geist({
   variable: '--font-sans',
@@ -41,11 +58,17 @@ const themeScript = `(() => {
 })();`;
 
 // The page and Eve routes validate the generated app's Better Auth session.
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   readonly children: ReactNode;
 }) {
+  let userId = 'local-dev';
+  let user = {
+    name: 'Developer',
+    email: 'test@test.dev',
+    avatar: '',
+  };
   return (
     <html
       className={cn(sans.variable, mono.variable)}
@@ -57,7 +80,9 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider>
-          <TooltipProvider>{children}</TooltipProvider>
+          <TooltipProvider>
+            <SidebarProvider defaultOpen={true}>{children}</SidebarProvider>
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>

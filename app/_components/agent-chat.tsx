@@ -8,6 +8,7 @@ import {
   FolderGit2Icon,
   GitBranchIcon,
   HistoryIcon,
+  PanelLeftIcon,
   PlusIcon,
   SettingsIcon,
   SquareIcon,
@@ -39,6 +40,7 @@ import type { ProjectRecord } from '@/lib/projects/types';
 import { GitHubBrandIcon } from '@/components/icons/github-brand-icon';
 import { cn } from '@/lib/utils';
 import { AgentMessage } from './agent-message';
+import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 
 const AGENT_NAME = 'sami';
 
@@ -277,11 +279,13 @@ export function AgentChat({
   );
 
   return (
-    <main className='flex h-dvh flex-col overflow-hidden bg-background text-foreground lg:pr-80'>
-      <ChatHeader
-        canStartNewChat={activeSessionId !== undefined}
-        project={project}
-      />
+    <main className='flex h-dvh flex-col overflow-hidden bg-background text-foreground'>
+      <div className=''>
+        <ChatHeader
+          canStartNewChat={activeSessionId !== undefined}
+          project={project}
+        />
+      </div>
 
       {showConversationLayout ? (
         <Conversation
@@ -335,7 +339,7 @@ export function AgentChat({
         <div className='w-full'>{composer}</div>
       </div>
 
-      <MonitoringPanel />
+      {/* <MonitoringPanel /> */}
     </main>
   );
 }
@@ -396,6 +400,8 @@ function ChatHeader({
   readonly canStartNewChat: boolean;
   readonly project?: ProjectRecord;
 }) {
+  const { toggleSidebar } = useSidebar();
+
   const startNewChat = () => {
     if (!project) {
       window.location.assign('/s');
@@ -414,8 +420,26 @@ function ChatHeader({
   };
 
   return (
-    <header className='pointer-events-none fixed top-0 right-0 left-0 z-20 h-14 border-b bg-background/95 backdrop-blur lg:right-80'>
-      <div className='relative mx-auto flex h-full w-full max-w-4xl items-center justify-center px-28'>
+    <header className='pointer-events-none sticky top-0 right-0 left-0 z-10 h-14 border-b bg-background/95 backdrop-blur lg:right-80'>
+      <div className='relative mx-auto flex h-full w-full items-center justify-between px-5'>
+        <div className='pointer-events-auto'>
+          <Button
+            data-sidebar='trigger'
+            data-slot='sidebar-trigger'
+            variant='ghost'
+            size='icon'
+            className={cn('size-7')}
+            onClick={(event) => {
+              console.log('first');
+              // onClick?.(event);
+              toggleSidebar();
+            }}
+            // {...props}
+          >
+            <PanelLeftIcon />
+            <span className='sr-only'>Toggle Sidebar</span>
+          </Button>
+        </div>
         {project ? (
           <div className='flex min-w-0 items-center gap-2 text-sm'>
             <GitHubBrandIcon className='size-3.5 shrink-0 text-muted-foreground' />
@@ -432,7 +456,7 @@ function ChatHeader({
             {AGENT_NAME}
           </span>
         )}
-        <div className='pointer-events-auto fixed top-3 right-4 flex items-center gap-1'>
+        <div className='pointer-events-auto flex items-center gap-1'>
           <Button
             aria-label='Open chats'
             onClick={() => window.location.assign('/sessions')}
