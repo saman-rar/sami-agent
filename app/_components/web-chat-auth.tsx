@@ -11,8 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
-
-const AGENT_NAME = "sami";
+import { APP_NAME } from "@/lib/public-config";
 
 export function SignIn() {
   const [pending, setPending] = useState(false);
@@ -42,7 +41,7 @@ export function SignIn() {
           <EveWordmark className="h-auto w-[4.875rem]" />
         </div>
         <section aria-label="Sign in" className="flex flex-col gap-2">
-          <h1 className="max-w-full break-words font-medium text-sm leading-6">{AGENT_NAME}</h1>
+          <h1 className="max-w-full break-words font-medium text-sm leading-6">{APP_NAME}</h1>
           <p className="flex flex-wrap items-center gap-2 text-muted-foreground text-sm leading-6">
             <span className="inline-flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
               <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
@@ -66,6 +65,31 @@ export function SignIn() {
           ) : null}
         </section>
       </div>
+    </main>
+  );
+}
+
+export function AccessDenied({ email }: { readonly email: string }) {
+  return (
+    <main className="flex min-h-dvh items-center justify-center bg-background px-8 text-foreground">
+      <section className="w-full max-w-md space-y-4 rounded-xl border bg-card p-6 shadow-sm">
+        <h1 className="font-medium text-lg">Access not allowed</h1>
+        <p className="text-muted-foreground text-sm leading-6">
+          The signed-in account <span className="font-medium text-foreground">{email}</span> is not
+          on this deployment&apos;s allowlist. Ask an administrator to add the email or domain to
+          AUTH_ALLOWED_EMAILS or AUTH_ALLOWED_DOMAINS.
+        </p>
+        <Button
+          onClick={() =>
+            void authClient.signOut({
+              fetchOptions: { onSuccess: () => window.location.assign("/") },
+            })
+          }
+          variant="outline"
+        >
+          Sign out
+        </Button>
+      </section>
     </main>
   );
 }

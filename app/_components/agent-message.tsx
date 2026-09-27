@@ -39,6 +39,7 @@ import {
   ToolOutput,
 } from "@/components/ai-elements/tool";
 import { Button } from "@/components/ui/button";
+import { safeExternalUrl } from "@/lib/public-config";
 import { cn } from "@/lib/utils";
 
 export type AgentInputResponse = {
@@ -64,27 +65,21 @@ export function AgentMessage({
     (last, part, index) => (part.type === "text" ? index : last),
     -1,
   );
-  const hasAssistantText =
-    message.role === "assistant" &&
-    message.parts.some((part) => part.type === "text" && part.text.length > 0);
-
   return (
     <Message
       data-optimistic={message.metadata?.optimistic ? "true" : undefined}
       from={message.role}
     >
       <MessageContent>
-        {message.parts.map((part, index) =>
-          hasAssistantText && part.type === "reasoning" ? null : (
-            <AgentMessagePart
-              canRespond={canRespond}
-              key={partKey(part, index)}
-              onInputResponses={onInputResponses}
-              part={part}
-              showCaret={isStreaming && message.role === "assistant" && index === lastTextIndex}
-            />
-          ),
-        )}
+        {message.parts.map((part, index) => (
+          <AgentMessagePart
+            canRespond={canRespond}
+            key={partKey(part, index)}
+            onInputResponses={onInputResponses}
+            part={part}
+            showCaret={isStreaming && message.role === "assistant" && index === lastTextIndex}
+          />
+        ))}
       </MessageContent>
     </Message>
   );
@@ -146,9 +141,9 @@ function AgentMessagePart({
           />
           <ToolContent>
             {part.toolName === "bash" ? (
-              <BashToolContent errorText={part.errorText} input={part.input} output={part.output} />
+              <BashToolContent errorText={sanitizeErrorText(part.errorText)} input={redactSensitive(part.input)} output={redactSensitive(part.output)} />
             ) : (
-              <ToolInput input={part.input} />
+              <ToolInput input={redactSensitive(part.input)} />
             )}
             <InputRequestActions
               canRespond={canRespond}
@@ -156,7 +151,7 @@ function AgentMessagePart({
               onInputResponses={onInputResponses}
             />
             {part.toolName === "bash" ? null : (
-              <ToolOutput errorText={part.errorText} output={part.output} />
+              <ToolOutput errorText={sanitizeErrorText(part.errorText)} output={redactSensitive(part.output)} />
             )}
           </ToolContent>
         </Tool>
@@ -216,7 +211,7 @@ function QuestionRequest({
             <QuestionOption
               className="justify-start px-3 py-2 text-left"
               key={option.id}
-              onClick={() => void submitOption(option.id)}
+              onClick={() => void Promise.resolve(submitOption(option.id)).catch(() => undefined)}
               value={option.id}
             >
               <span className="min-w-0 flex-1">
@@ -266,12 +261,14 @@ function QuestionRequest({
 function AttachmentPart({ part }: { readonly part: EveFilePart }) {
   const label = part.filename ?? "Attachment";
   const detail = [part.mediaType, formatBytes(part.size)].filter(Boolean).join(" - ");
-  const isImage = part.mediaType.startsWith("image/") && part.url !== undefined;
+  const externalUrl = safeExternalUrl(part.url);
+  const inlineImageUrl = part.url?.startsWith("data:image/") ? part.url : externalUrl;
+  const isImage = part.mediaType.startsWith("image/") && inlineImageUrl !== undefined;
   const Icon = isImage ? ImageIcon : FileIcon;
   const body = (
     <span className="flex max-w-sm items-center gap-3 rounded-md border bg-background/60 p-2 text-sm">
       {isImage ? (
-        <img alt={label} className="size-12 shrink-0 rounded-sm object-cover" src={part.url} />
+        <img alt={label} className="size-12 shrink-0 rounded-sm object-cover" src={inlineImageUrl} />
       ) : (
         <span className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-muted text-muted-foreground">
           <Icon className="size-4" />
@@ -281,12 +278,12 @@ function AttachmentPart({ part }: { readonly part: EveFilePart }) {
         <span className="block truncate font-medium">{label}</span>
         {detail ? <span className="block truncate text-muted-foreground">{detail}</span> : null}
       </span>
-      {part.url ? <ExternalLinkIcon className="size-4 shrink-0 text-muted-foreground" /> : null}
+      {externalUrl ? <ExternalLinkIcon className="size-4 shrink-0 text-muted-foreground" /> : null}
     </span>
   );
 
-  return part.url ? (
-    <a href={part.url} rel="noreferrer" target="_blank">
+  return externalUrl ? (
+    <a href={externalUrl} rel="noopener noreferrer" target="_blank">
       {body}
     </a>
   ) : (
@@ -339,9 +336,9 @@ function AuthorizationPrompt({ part }: { readonly part: EveAuthorizationPart }) 
               </code>
             </div>
           ) : null}
-          {part.state === "required" && part.authorization?.url ? (
+          {part.state === "required" && safeExternalUrl(part.authorization?.url) ? (
             <Button asChild size="sm">
-              <a href={part.authorization.url} rel="noreferrer" target="_blank">
+              <a href={safeExternalUrl(part.authorization?.url)} rel="noopener noreferrer" target="_blank">
                 <ExternalLinkIcon className="size-4" />
                 Sign in with {part.displayName}
               </a>
@@ -370,7 +367,7 @@ function authorizationDescription(part: EveAuthorizationPart): string {
   if (part.outcome === "authorized") {
     return `${part.displayName} connected.`;
   }
-  const tail = part.reason !== undefined ? ` (${part.reason})` : "";
+  const tail = part.reason !== undefined ? ` (${redactString(part.reason).slice(0, 300)})` : "";
   return `${part.displayName} authorization ${formatAuthorizationOutcome(part.outcome)}${tail}.`;
 }
 
@@ -433,12 +430,14 @@ function InputRequestActions({
               disabled={!canRespond}
               key={option.id}
               onClick={() => {
-                void onInputResponses([
-                  {
-                    optionId: option.id,
-                    requestId: inputRequest.requestId,
-                  },
-                ]);
+                void Promise.resolve(
+                  onInputResponses([
+                    {
+                      optionId: option.id,
+                      requestId: inputRequest.requestId,
+                    },
+                  ]),
+                ).catch(() => undefined);
               }}
               size="sm"
               type="button"
@@ -451,6 +450,32 @@ function InputRequestActions({
       )}
     </div>
   );
+}
+
+function sanitizeErrorText(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  return redactString(value).slice(0, 2_000);
+}
+
+function redactSensitive<T>(value: T): T {
+  if (typeof value === "string") return redactString(value) as T;
+  if (Array.isArray(value)) return value.map((item) => redactSensitive(item)) as T;
+  if (value && typeof value === "object") {
+    const result: Record<string, unknown> = {};
+    for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+      result[key] = /token|secret|password|cookie|authorization|api[-_]?key/i.test(key)
+        ? "[REDACTED]"
+        : redactSensitive(item);
+    }
+    return result as T;
+  }
+  return value;
+}
+
+function redactString(value: string): string {
+  return value
+    .replace(/(bearer\s+)[a-z0-9._~+/=-]+/gi, "$1[REDACTED]")
+    .replace(/((?:api[-_]?key|token|secret|password)\s*[:=]\s*)[^\s,;]+/gi, "$1[REDACTED]");
 }
 
 function partKey(part: EveMessagePart, index: number): string {

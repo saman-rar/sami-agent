@@ -458,13 +458,11 @@ export type PromptInputProps = Omit<HTMLAttributes<HTMLFormElement>, "onSubmit" 
   multiple?: boolean;
   // When true, accepts drops anywhere on document. Default false (opt-in).
   globalDrop?: boolean;
-  // Render a hidden input with given name and keep it in sync for native form posts. Default false.
-  syncHiddenInput?: boolean;
   // Minimal constraints
   maxFiles?: number;
   // bytes
   maxFileSize?: number;
-  onError?: (err: { code: "max_files" | "max_file_size" | "accept"; message: string }) => void;
+  onError?: (err: { code: "max_files" | "max_file_size" | "accept" | "conversion" | "submit"; message: string }) => void;
   onSubmit: (
     message: PromptInputMessage,
     event: FormEvent<HTMLFormElement>,
@@ -476,7 +474,6 @@ export const PromptInput = ({
   accept,
   multiple,
   globalDrop,
-  syncHiddenInput,
   maxFiles,
   maxFileSize,
   onError,
@@ -524,12 +521,15 @@ export const PromptInput = ({
         .filter(Boolean);
 
       return patterns.some((pattern) => {
-        if (pattern.endsWith("/*")) {
-          // e.g: image/* -> image/
-          const prefix = pattern.slice(0, -1);
-          return f.type.startsWith(prefix);
+        const normalizedPattern = pattern.toLowerCase();
+        if (normalizedPattern.startsWith(".")) {
+          return f.name.toLowerCase().endsWith(normalizedPattern);
         }
-        return f.type === pattern;
+        if (normalizedPattern.endsWith("/*")) {
+          const prefix = normalizedPattern.slice(0, -1);
+          return f.type.toLowerCase().startsWith(prefix);
+        }
+        return f.type.toLowerCase() === normalizedPattern;
       });
     },
     [accept],
@@ -539,6 +539,9 @@ export const PromptInput = ({
     (fileList: File[] | FileList) => {
       const incoming = [...fileList];
       const accepted = incoming.filter((f) => matchesAccept(f));
+      if (accepted.length < incoming.length && accepted.length > 0) {
+        onError?.({ code: "accept", message: "Some files were skipped because their type is not allowed." });
+      }
       if (incoming.length && accepted.length === 0) {
         onError?.({
           code: "accept",
@@ -548,6 +551,9 @@ export const PromptInput = ({
       }
       const withinSize = (f: File) => (maxFileSize ? f.size <= maxFileSize : true);
       const sized = accepted.filter(withinSize);
+      if (sized.length < accepted.length && sized.length > 0) {
+        onError?.({ code: "max_file_size", message: "Some files were skipped because they exceed the size limit." });
+      }
       if (accepted.length > 0 && sized.length === 0) {
         onError?.({
           code: "max_file_size",
@@ -599,6 +605,9 @@ export const PromptInput = ({
     (fileList: File[] | FileList) => {
       const incoming = [...fileList];
       const accepted = incoming.filter((f) => matchesAccept(f));
+      if (accepted.length < incoming.length && accepted.length > 0) {
+        onError?.({ code: "accept", message: "Some files were skipped because their type is not allowed." });
+      }
       if (incoming.length && accepted.length === 0) {
         onError?.({
           code: "accept",
@@ -608,6 +617,9 @@ export const PromptInput = ({
       }
       const withinSize = (f: File) => (maxFileSize ? f.size <= maxFileSize : true);
       const sized = accepted.filter(withinSize);
+      if (sized.length < accepted.length && sized.length > 0) {
+        onError?.({ code: "max_file_size", message: "Some files were skipped because they exceed the size limit." });
+      }
       if (accepted.length > 0 && sized.length === 0) {
         onError?.({
           code: "max_file_size",
@@ -669,14 +681,6 @@ export const PromptInput = ({
     }
     controller.__registerFileInput(inputRef, () => inputRef.current?.click());
   }, [usingProvider, controller]);
-
-  // Note: File input cannot be programmatically set for security reasons
-  // The syncHiddenInput prop is no longer functional
-  useEffect(() => {
-    if (syncHiddenInput && inputRef.current && files.length === 0) {
-      inputRef.current.value = "";
-    }
-  }, [files, syncHiddenInput]);
 
   // Attach drop handlers on nearest form and document (opt-in)
   useEffect(() => {
@@ -811,10 +815,12 @@ export const PromptInput = ({
           files.map(async ({ id: _id, ...item }) => {
             if (item.url?.startsWith("blob:")) {
               const dataUrl = await convertBlobUrlToDataUrl(item.url);
-              // If conversion failed, keep the original blob URL
+              if (!dataUrl) {
+                throw new Error(`Unable to read attachment: ${item.filename ?? "file"}`);
+              }
               return {
                 ...item,
-                url: dataUrl ?? item.url,
+                url: dataUrl,
               };
             }
             return item;
@@ -832,7 +838,7 @@ export const PromptInput = ({
               controller.textInput.clear();
             }
           } catch {
-            // Don't clear on error - user may want to retry
+            onError?.({ code: "submit", message: "The message could not be sent. Your draft and attachments were kept." });
           }
         } else {
           // Sync function completed without throwing, clear inputs
@@ -842,10 +848,10 @@ export const PromptInput = ({
           }
         }
       } catch {
-        // Don't clear on error - user may want to retry
+        onError?.({ code: "conversion", message: "An attachment could not be prepared for upload. Remove it and try again." });
       }
     },
-    [usingProvider, controller, files, onSubmit, clear],
+    [usingProvider, controller, files, onSubmit, clear, onError],
   );
 
   // Render with or without local provider
