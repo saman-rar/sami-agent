@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      AUTH_ALLOWED_EMAILS: ci@example.com
+      AUTH_ALLOWED_HOSTS: localhost:3000
+      BETTER_AUTH_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
+      VERCEL_APP_CLIENT_ID: ci-client
+      VERCEL_APP_CLIENT_SECRET: ci-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run build:eve
+      - run: npm run build

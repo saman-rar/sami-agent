@@ -2,8 +2,8 @@
 
 import type { UserContent } from "ai";
 import { useEveAgent } from "eve/react";
-import { AlertCircleIcon, BrainIcon, PlusIcon, SquareIcon } from "lucide-react";
-import { useState } from "react";
+import { AlertCircleIcon, BrainIcon, Clock3Icon, FileIcon, PaperclipIcon, PlusIcon, SquareIcon, XIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   Conversation,
   ConversationContent,
@@ -21,20 +21,30 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { APP_NAME, FILE_UPLOAD } from "@/lib/public-config";
 import { cn } from "@/lib/utils";
 import { AgentMessage } from "./agent-message";
-
-const AGENT_NAME = "sami";
 
 export function AgentChat({
   sessionId,
   sessionless = false,
+  historyOwnerKey = "dev",
 }: {
   readonly sessionId?: string;
   readonly sessionless?: boolean;
+  readonly historyOwnerKey?: string;
 }) {
   const [cancellationError, setCancellationError] = useState<string>();
   const [hasInputText, setHasInputText] = useState(false);
+  const [composerError, setComposerError] = useState<string>();
   const agent = useEveAgent({
     initialSession:
       sessionId === undefined
@@ -45,6 +55,9 @@ export function AgentChat({
           },
     resume: sessionId !== undefined,
     onSessionChange(session) {
+      if (session !== undefined) {
+        rememberRecentSession(historyOwnerKey, session.sessionId);
+      }
       if (sessionId === undefined && session !== undefined) {
         // Next patches window.history to navigate, which would detach the active stream.
         History.prototype.replaceState.call(
@@ -68,7 +81,7 @@ export function AgentChat({
     isBusy &&
     (agent.status === "submitted" || lastMessage?.role !== "assistant" || isPendingAssistantShell);
   const turnFailure = isBusy || isResuming ? undefined : getLatestTurnFailure(agent.events);
-  const errorMessage = cancellationError ?? agent.error?.message ?? turnFailure;
+  const errorMessage = cancellationError ?? toSafeAgentError(agent.error) ?? turnFailure ?? composerError;
   const hasConversationContent = sessionless || !isEmpty || errorMessage !== undefined;
   const showConversationLayout = isResuming || hasConversationContent;
   const activeSessionId = sessionId ?? agent.session?.sessionId;
@@ -86,6 +99,7 @@ export function AgentChat({
 
     setHasInputText(false);
     setCancellationError(undefined);
+    setComposerError(undefined);
     const options = isBusy ? { turnPolicy: "steer" as const } : undefined;
 
     if (message.files.length === 0) {
@@ -110,7 +124,15 @@ export function AgentChat({
   };
 
   const composer = (
-    <PromptInput onSubmit={handleSubmit}>
+    <PromptInput
+      accept={FILE_UPLOAD.accept}
+      maxFileSize={FILE_UPLOAD.maxFileSizeBytes}
+      maxFiles={FILE_UPLOAD.maxFiles}
+      multiple
+      onError={(error) => setComposerError(error.message)}
+      onSubmit={handleSubmit}
+    >
+      <AttachmentTray />
       <PromptInputTextarea
         disabled={isResuming}
         onChange={(event) => setHasInputText(event.currentTarget.value.trim().length > 0)}
@@ -128,7 +150,7 @@ export function AgentChat({
   return (
     <main className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
       {showConversationLayout ? (
-        <ChatHeader canStartNewChat={activeSessionId !== undefined} />
+        <ChatHeader canStartNewChat={activeSessionId !== undefined} historyOwnerKey={historyOwnerKey} />
       ) : null}
 
       {showConversationLayout ? (
@@ -179,7 +201,7 @@ export function AgentChat({
       >
         {showConversationLayout ? null : (
           <div className="flex flex-col items-center gap-3 text-center">
-            <h1 className="font-medium text-5xl tracking-tighter">{AGENT_NAME}</h1>
+            <h1 className="font-medium text-5xl tracking-tighter">{APP_NAME}</h1>
           </div>
         )}
         <div className="w-full">{composer}</div>
@@ -203,7 +225,23 @@ function ComposerAction({
   const canSubmit = hasInputText || attachments.files.length > 0;
 
   if (!isBusy || canSubmit) {
-    return <PromptInputSubmit disabled={isResuming} />;
+    return (
+      <>
+        {!isBusy ? (
+          <PromptInputButton
+            aria-label="Attach files"
+            className="absolute bottom-2.5 left-2.5"
+            disabled={isResuming}
+            onClick={() => attachments.openFileDialog()}
+            type="button"
+            variant="ghost"
+          >
+            <PaperclipIcon className="size-4" />
+          </PromptInputButton>
+        ) : null}
+        <PromptInputSubmit disabled={isResuming} />
+      </>
+    );
   }
 
   return (
@@ -215,6 +253,33 @@ function ComposerAction({
     >
       <SquareIcon className="size-3 fill-current" />
     </PromptInputButton>
+  );
+}
+
+function AttachmentTray() {
+  const attachments = usePromptInputAttachments();
+  if (attachments.files.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-2 border-b px-3 py-2">
+      {attachments.files.map((file) => (
+        <div
+          className="flex max-w-[16rem] items-center gap-2 rounded-md border bg-background px-2 py-1 text-xs"
+          key={file.id}
+        >
+          <FileIcon className="size-3.5 shrink-0 text-muted-foreground" />
+          <span className="truncate">{file.filename ?? "Attachment"}</span>
+          <button
+            aria-label={`Remove ${file.filename ?? "attachment"}`}
+            className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            onClick={() => attachments.remove(file.id)}
+            type="button"
+          >
+            <XIcon className="size-3.5" />
+          </button>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -237,27 +302,114 @@ function ErrorMessage({ message }: { readonly message: string }) {
   );
 }
 
-function ChatHeader({ canStartNewChat }: { readonly canStartNewChat: boolean }) {
+function ChatHeader({
+  canStartNewChat,
+  historyOwnerKey,
+}: {
+  readonly canStartNewChat: boolean;
+  readonly historyOwnerKey: string;
+}) {
   return (
     <header className="pointer-events-none fixed top-0 right-0 left-0 z-20 h-14">
       <div className="relative mx-auto flex h-full w-full max-w-3xl items-center justify-center bg-background px-24">
-        <span className="truncate text-muted-foreground text-sm">{AGENT_NAME}</span>
-        {canStartNewChat ? (
-          <Button
-            aria-label="Start a new chat"
-            className="pointer-events-auto fixed top-3 right-6 pr-4"
-            onClick={() => window.location.assign("/s")}
-            size="sm"
-            type="button"
-            variant="ghost"
-          >
-            <PlusIcon className="size-4" />
-            <span className="hidden font-normal text-sm sm:inline">New chat</span>
-          </Button>
-        ) : null}
+        <span className="truncate text-muted-foreground text-sm">{APP_NAME}</span>
+        <div className="pointer-events-auto fixed top-3 right-4 flex items-center gap-1 sm:right-6">
+          <RecentChatMenu historyOwnerKey={historyOwnerKey} />
+          {canStartNewChat ? (
+            <Button
+              aria-label="Start a new chat"
+              onClick={() => window.location.assign("/s")}
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
+              <PlusIcon className="size-4" />
+              <span className="hidden font-normal text-sm sm:inline">New chat</span>
+            </Button>
+          ) : null}
+        </div>
       </div>
     </header>
   );
+}
+
+function RecentChatMenu({ historyOwnerKey }: { readonly historyOwnerKey: string }) {
+  const [sessions, setSessions] = useState<RecentSession[]>([]);
+
+  useEffect(() => {
+    setSessions(readRecentSessions(historyOwnerKey));
+  }, [historyOwnerKey]);
+
+  return (
+    <DropdownMenu
+      onOpenChange={(open) => {
+        if (open) setSessions(readRecentSessions(historyOwnerKey));
+      }}
+    >
+      <DropdownMenuTrigger asChild>
+        <Button aria-label="Recent chats" size="icon-sm" type="button" variant="ghost">
+          <Clock3Icon className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-72">
+        <DropdownMenuLabel>Recent chats</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {sessions.length === 0 ? (
+          <div className="px-2 py-3 text-muted-foreground text-sm">No recent chats on this browser.</div>
+        ) : (
+          sessions.map((session) => (
+            <DropdownMenuItem
+              className="cursor-pointer"
+              key={session.id}
+              onSelect={() => window.location.assign(`/s/${encodeURIComponent(session.id)}`)}
+            >
+              <div className="min-w-0">
+                <div className="truncate font-mono text-xs">{session.id}</div>
+                <div className="text-muted-foreground text-xs">
+                  {new Date(session.updatedAt).toLocaleString()}
+                </div>
+              </div>
+            </DropdownMenuItem>
+          ))
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+type RecentSession = { readonly id: string; readonly updatedAt: number };
+
+function recentSessionStorageKey(ownerKey: string): string {
+  return `sami:recent-sessions:${ownerKey}`;
+}
+
+function readRecentSessions(ownerKey: string): RecentSession[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const value = localStorage.getItem(recentSessionStorageKey(ownerKey));
+    const parsed = value ? (JSON.parse(value) as unknown) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter(
+        (item): item is RecentSession =>
+          typeof item === "object" &&
+          item !== null &&
+          typeof (item as RecentSession).id === "string" &&
+          typeof (item as RecentSession).updatedAt === "number",
+      )
+      .slice(0, 12);
+  } catch {
+    return [];
+  }
+}
+
+function rememberRecentSession(ownerKey: string, sessionId: string): void {
+  if (typeof window === "undefined") return;
+  const next = [
+    { id: sessionId, updatedAt: Date.now() },
+    ...readRecentSessions(ownerKey).filter((item) => item.id !== sessionId),
+  ].slice(0, 12);
+  localStorage.setItem(recentSessionStorageKey(ownerKey), JSON.stringify(next));
 }
 
 function PendingThinking() {
@@ -277,6 +429,11 @@ function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unable to cancel the response.";
 }
 
+function toSafeAgentError(error: unknown): string | undefined {
+  if (!error) return undefined;
+  return "The request could not be completed. Please retry. If the problem continues, check the server logs.";
+}
+
 function getLatestTurnFailure(
   events: ReturnType<typeof useEveAgent>["events"],
 ): string | undefined {
@@ -286,7 +443,7 @@ function getLatestTurnFailure(
     if (event.type === "turn.failed") {
       return event.data.code === "MODEL_CALL_FAILED"
         ? "The model is temporarily unavailable. Please try again."
-        : event.data.message;
+        : "The agent turn failed. Please retry. If the problem continues, check the server logs.";
     }
 
     if (event.type === "turn.completed" || event.type === "turn.cancelled") {

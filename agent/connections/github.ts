@@ -6,13 +6,13 @@ export default defineDynamic({
   events: {
     "session.started": (_event, ctx) => {
       try {
-        const connectId = process.env.VERCEL_MCP_CONNECT_ID?.trim();
+        const connectId = process.env.GITHUB_MCP_CONNECT_ID?.trim();
         const principal = ctx.session.auth.current;
         if (!connectId || principal?.principalType !== "user") return null;
 
         return defineMcpClientConnection({
-          url: "https://mcp.vercel.com",
-          description: "Manage Vercel projects, deployments, and environment variables.",
+          url: "https://api.githubcopilot.com/mcp/",
+          description: "Inspect repositories and perform approved GitHub operations for the signed-in user.",
           instanceKey: connectId,
           auth: connect(connectId),
           approval: always(),
