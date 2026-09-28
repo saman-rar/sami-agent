@@ -6,23 +6,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { DEFAULT_THEME, THEME_STORAGE_KEY } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import './globals.css';
-import {
-  Sidebar,
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/app-sidebar';
-import { AccountControl, SignIn } from './_components/web-chat-auth';
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
-import { isConfiguredOwner } from '@/lib/persistence/single-owner';
-import {
-  listSavedSessions,
-  restoreWorkspaceState,
-} from '@/lib/sessions/service';
-import { redirect } from 'next/navigation';
-import { listProjects } from '@/lib/projects/service';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 const sans = Geist({
   variable: '--font-sans',

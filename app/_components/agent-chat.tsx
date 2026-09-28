@@ -32,7 +32,6 @@ import {
 } from '@/components/ai-elements/prompt-input';
 import { Shimmer } from '@/components/ai-elements/shimmer';
 import { AgentModeSelector } from '@/components/agent-mode-selector';
-import { MonitoringPanel } from '@/components/analytics/monitoring-panel';
 import { ModelSelector } from '@/components/model-selector';
 import { Button } from '@/components/ui/button';
 import { DEFAULT_AGENT_MODE, type AgentMode } from '@/lib/agent-mode';

@@ -4,8 +4,7 @@ import { isConfiguredOwner } from '@/lib/persistence/single-owner';
 import { AgentChat } from './agent-chat';
 import type { AgentMode } from '@/lib/agent-mode';
 import type { ProjectRecord } from '@/lib/projects/types';
-import { AccountControl, SignIn } from './web-chat-auth';
-import { Sidebar } from '@/components/ui/sidebar';
+import { SignIn } from './web-chat-auth';
 
 export async function AuthenticatedAgentChat({
   sessionId,
@@ -18,20 +17,6 @@ export async function AuthenticatedAgentChat({
   readonly project?: ProjectRecord;
   readonly initialAgentMode?: AgentMode;
 }) {
-  // if (process.env.NODE_ENV === 'development') {
-  //   return (
-  //     <AgentChat
-  //       initialAgentMode={initialAgentMode}
-  //       project={project}
-  //       sessionId={sessionId}
-  //       sessionless={sessionless}
-  //     />
-  //   );
-  // }
-
-  const session = await auth.api.getSession({ headers: await headers() });
-  // if (!session || !isConfiguredOwner(session.user.email)) return <SignIn />;
-
   return (
     <>
       <AgentChat
