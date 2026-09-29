@@ -76,8 +76,8 @@ export default async function RootLayout({
     };
   }
 
-  const workspace = await restoreWorkspaceState(userId);
-  if (workspace.lastPath) redirect(workspace.lastPath);
+  // const workspace = await restoreWorkspaceState(userId);
+  // if (workspace.lastPath) redirect(workspace.lastPath);
   return (
     <html
       className={cn(sans.variable, mono.variable)}
