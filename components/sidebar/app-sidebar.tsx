@@ -3,7 +3,6 @@
 import * as React from 'react';
 import {
   AudioWaveform,
-  BookOpen,
   Bot,
   Command,
   Frame,
@@ -12,13 +11,8 @@ import {
   Map,
   PieChart,
   Settings2,
-  SquareTerminal,
 } from 'lucide-react';
 
-import { NavMain } from '@/components/nav-main';
-import { NavProjects } from '@/components/nav-projects';
-import { NavUser } from '@/components/nav-user';
-import { TeamSwitcher } from '@/components/team-switcher';
 import {
   Sidebar,
   SidebarContent,
@@ -28,7 +22,11 @@ import {
 } from '@/components/ui/sidebar';
 import { ProjectRecord } from '@/lib/projects/types';
 import { SessionRecord } from '@/lib/sessions/types';
+import { TeamSwitcher } from './team-switcher';
+import { NavMain } from './nav-main';
+import { NavProjects } from './nav-projects';
 import { NavSessions } from './nav-sessions';
+import { NavUser } from './nav-user';
 
 // This is sample data.
 const data = {

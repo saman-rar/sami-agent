@@ -40,7 +40,7 @@ export function NavMain({
         {items.map((item) => {
           if (!item.items) {
             return (
-              <Link href={item.url} className='cursor-pointer'>
+              <Link href={item.url} className='cursor-pointer' key={item.title}>
                 <SidebarMenuButton tooltip={item.title}>
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>

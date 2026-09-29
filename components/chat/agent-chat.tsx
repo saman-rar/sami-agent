@@ -31,8 +31,8 @@ import {
   usePromptInputAttachments,
 } from '@/components/ai-elements/prompt-input';
 import { Shimmer } from '@/components/ai-elements/shimmer';
-import { AgentModeSelector } from '@/components/agent-mode-selector';
-import { ModelSelector } from '@/components/model-selector';
+import { AgentModeSelector } from '@/components/ai-elements/agent-mode-selector';
+import { ModelSelector } from '@/components/ai-elements/model-selector';
 import { Button } from '@/components/ui/button';
 import { DEFAULT_AGENT_MODE, type AgentMode } from '@/lib/agent-mode';
 import type { ProjectRecord } from '@/lib/projects/types';

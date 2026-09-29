@@ -2,10 +2,10 @@ import { ArrowLeftIcon } from 'lucide-react';
 import { headers } from 'next/headers';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { SignIn } from '@/app/_components/web-chat-auth';
-import { SettingsNav } from '@/app/settings/_components/settings-nav';
+import { SignIn } from '@/components/chat/web-chat-auth';
 import { auth } from '@/lib/auth';
 import { isConfiguredOwner } from '@/lib/persistence/single-owner';
+import { SettingsNav } from './_components/settings-nav';
 
 export default async function SettingsLayout({
   children,

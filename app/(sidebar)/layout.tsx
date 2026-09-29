@@ -5,8 +5,19 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { DEFAULT_THEME, THEME_STORAGE_KEY } from '@/lib/theme';
 import { cn } from '@/lib/utils';
-import './globals.css';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/sidebar/app-sidebar';
+import { auth } from '@/lib/auth';
+import { isConfiguredOwner } from '@/lib/persistence/single-owner';
+import { headers } from 'next/headers';
+import { SignIn } from '@/components/chat/web-chat-auth';
+import {
+  listSavedSessions,
+  restoreWorkspaceState,
+} from '@/lib/sessions/service';
+import { redirect } from 'next/navigation';
+import { listProjects } from '@/lib/projects/service';
+import '../globals.css';
 
 const sans = Geist({
   variable: '--font-sans',
@@ -53,6 +64,20 @@ export default async function RootLayout({
     email: 'test@test.dev',
     avatar: '',
   };
+
+  if (process.env.NODE_ENV !== 'development') {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session || !isConfiguredOwner(session.user.email)) return <SignIn />;
+    userId = session.user.id;
+    user = {
+      name: session.user.name,
+      email: session.user.email,
+      avatar: session.user.image ?? '',
+    };
+  }
+
+  const workspace = await restoreWorkspaceState(userId);
+  if (workspace.lastPath) redirect(workspace.lastPath);
   return (
     <html
       className={cn(sans.variable, mono.variable)}
@@ -65,7 +90,14 @@ export default async function RootLayout({
       <body>
         <ThemeProvider>
           <TooltipProvider>
-            <SidebarProvider defaultOpen={true}>{children}</SidebarProvider>
+            <SidebarProvider defaultOpen={true}>
+              <AppSidebar
+                user={user}
+                projects={await listProjects(userId)}
+                sessions={await listSavedSessions(userId)}
+              />
+              <SidebarInset>{children}</SidebarInset>
+            </SidebarProvider>
           </TooltipProvider>
         </ThemeProvider>
       </body>
