@@ -39,7 +39,7 @@ import type { ProjectRecord } from '@/lib/projects/types';
 import { GitHubBrandIcon } from '@/components/icons/github-brand-icon';
 import { cn } from '@/lib/utils';
 import { AgentMessage } from './agent-message';
-import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
+import { useSidebar } from '@/components/ui/sidebar';
 
 const AGENT_NAME = 'sami';
 
@@ -419,7 +419,7 @@ function ChatHeader({
   };
 
   return (
-    <header className='pointer-events-none sticky top-0 right-0 left-0 z-10 h-14 border-b bg-background/95 backdrop-blur lg:right-80'>
+    <header className='pointer-events-none sticky top-0 right-0 left-0 z-10 h-14 border-b bg-sidebar/95 backdrop-blur lg:right-80'>
       <div className='relative mx-auto flex h-full w-full items-center justify-between px-5'>
         <div className='pointer-events-auto'>
           <Button

@@ -11,11 +11,7 @@ import { auth } from '@/lib/auth';
 import { isConfiguredOwner } from '@/lib/persistence/single-owner';
 import { headers } from 'next/headers';
 import { SignIn } from '@/components/chat/web-chat-auth';
-import {
-  listSavedSessions,
-  restoreWorkspaceState,
-} from '@/lib/sessions/service';
-import { redirect } from 'next/navigation';
+import { listSavedSessions } from '@/lib/sessions/service';
 import { listProjects } from '@/lib/projects/service';
 import '../globals.css';
 

@@ -22,11 +22,12 @@ import {
 } from '@/components/ui/sidebar';
 import { ProjectRecord } from '@/lib/projects/types';
 import { SessionRecord } from '@/lib/sessions/types';
-import { TeamSwitcher } from './team-switcher';
+import { SidebarLogo } from './logo';
 import { NavMain } from './nav-main';
 import { NavProjects } from './nav-projects';
 import { NavSessions } from './nav-sessions';
 import { NavUser } from './nav-user';
+import { NavActions } from './nav-actions';
 
 // This is sample data.
 const data = {
@@ -122,9 +123,10 @@ export function AppSidebar({
   return (
     <Sidebar collapsible='icon' {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <SidebarLogo />
       </SidebarHeader>
       <SidebarContent>
+        <NavActions />
         <NavMain items={data.navMain} />
         <NavProjects projects={projects} />
         <NavSessions sessions={sessions} />
