@@ -47,12 +47,6 @@ export default async function RootLayout({
 }: {
   readonly children: ReactNode;
 }) {
-  let userId = 'local-dev';
-  let user = {
-    name: 'Developer',
-    email: 'test@test.dev',
-    avatar: '',
-  };
   return (
     <html
       className={cn(sans.variable, mono.variable)}
