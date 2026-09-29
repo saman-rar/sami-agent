@@ -4,6 +4,7 @@ import {
   Folder,
   Forward,
   MoreHorizontal,
+  PlusIcon,
   Trash2,
   type LucideIcon,
 } from 'lucide-react';
@@ -26,6 +27,7 @@ import {
 } from '@/components/ui/sidebar';
 import { ProjectRecord } from '@/lib/projects/types';
 import Link from 'next/link';
+import { Button } from '../ui/button';
 
 export function NavProjects({ projects }: { projects: ProjectRecord[] }) {
   const { isMobile } = useSidebar();
@@ -37,7 +39,7 @@ export function NavProjects({ projects }: { projects: ProjectRecord[] }) {
         {projects.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild>
-              <Link href={`projects/${item.sessionId}`}>
+              <Link href={`/projects/${item.sessionId}`}>
                 <span>{item.name}</span>
               </Link>
             </SidebarMenuButton>
@@ -54,17 +56,16 @@ export function NavProjects({ projects }: { projects: ProjectRecord[] }) {
                 align={isMobile ? 'end' : 'start'}
               >
                 <DropdownMenuItem>
-                  <Folder className='text-muted-foreground' />
-                  <span>View Project</span>
+                  <Link href={`/projects/${item.sessionId}`}>
+                    <Folder className='text-muted-foreground' />
+                    <span>View Project</span>
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <Forward className='text-muted-foreground' />
-                  <span>Share Project</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Trash2 className='text-muted-foreground' />
-                  <span>Delete Project</span>
+                  <Button>
+                    <Trash2 className='text-muted-foreground' />
+                    <span>Delete Project</span>
+                  </Button>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -72,8 +73,13 @@ export function NavProjects({ projects }: { projects: ProjectRecord[] }) {
         ))}
         <SidebarMenuItem>
           <SidebarMenuButton className='text-sidebar-foreground/70'>
-            <MoreHorizontal className='text-sidebar-foreground/70' />
-            <span>More</span>
+            <Link
+              href={'/projects'}
+              className='flex gap-1 text-xs items-center'
+            >
+              <PlusIcon className='text-sidebar-foreground/70 size-3.5' />
+              <span>new</span>
+            </Link>
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>

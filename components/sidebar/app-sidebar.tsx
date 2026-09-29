@@ -36,33 +36,16 @@ const data = {
     email: 'm@example.com',
     avatar: '/avatars/shadcn.jpg',
   },
-  teams: [
-    {
-      name: 'Acme Inc',
-      logo: GalleryVerticalEnd,
-      plan: 'Enterprise',
-    },
-    {
-      name: 'Acme Corp.',
-      logo: AudioWaveform,
-      plan: 'Startup',
-    },
-    {
-      name: 'Evil Corp.',
-      logo: Command,
-      plan: 'Free',
-    },
-  ],
   navMain: [
     {
       title: 'Providers',
-      url: 'settings/providers',
+      url: '/settings/providers',
       icon: KeyIcon,
       isActive: true,
     },
     {
       title: 'Models',
-      url: 'settings/models',
+      url: '/settings/models',
       icon: Bot,
     },
     {

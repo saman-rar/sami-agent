@@ -1,18 +1,11 @@
 'use client';
 
-import {
-  Folder,
-  Forward,
-  MoreHorizontal,
-  Trash2,
-  type LucideIcon,
-} from 'lucide-react';
+import { Folder, MoreHorizontal, PlusIcon, Trash2 } from 'lucide-react';
 
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -26,9 +19,28 @@ import {
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { SessionRecord } from '@/lib/sessions/types';
+import { useState } from 'react';
 
-export function NavSessions({ sessions }: { sessions: SessionRecord[] }) {
+export function NavSessions({
+  sessions: initialSessions,
+}: {
+  sessions: SessionRecord[];
+}) {
+  const [sessions, setSessions] = useState(initialSessions);
   const { isMobile } = useSidebar();
+
+  const archiveSession = async (sessionId: string) => {
+    const response = await fetch(
+      `/api/sessions/${encodeURIComponent(sessionId)}`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ archived: true }),
+      },
+    );
+    if (response.ok)
+      setSessions((current) => current.filter((item) => item.id !== sessionId));
+  };
 
   return (
     <SidebarGroup className='group-data-[collapsible=icon]:hidden'>
@@ -58,15 +70,13 @@ export function NavSessions({ sessions }: { sessions: SessionRecord[] }) {
                   align={isMobile ? 'end' : 'start'}
                 >
                   <DropdownMenuItem>
-                    <Folder className='text-muted-foreground' />
-                    <span>View Project</span>
+                    <Link href={href}>
+                      <Folder className='text-muted-foreground' />
+                      <span>View Project</span>
+                    </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Forward className='text-muted-foreground' />
-                    <span>Share Project</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
+
+                  <DropdownMenuItem onClick={() => archiveSession(item.id)}>
                     <Trash2 className='text-muted-foreground' />
                     <span>Delete Project</span>
                   </DropdownMenuItem>
@@ -77,8 +87,10 @@ export function NavSessions({ sessions }: { sessions: SessionRecord[] }) {
         })}
         <SidebarMenuItem>
           <SidebarMenuButton className='text-sidebar-foreground/70'>
-            <MoreHorizontal className='text-sidebar-foreground/70' />
-            <span>More</span>
+            <Link href={'/s'} className='flex gap-1 text-xs items-center'>
+              <PlusIcon className='text-sidebar-foreground/70 size-3.5' />
+              <span>new</span>
+            </Link>
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>
