@@ -14,6 +14,7 @@ import { SignIn } from '@/components/chat/web-chat-auth';
 import { listSavedSessions } from '@/lib/sessions/service';
 import { listProjects } from '@/lib/projects/service';
 import '../globals.css';
+import { redirect } from 'next/navigation';
 
 const sans = Geist({
   variable: '--font-sans',
@@ -63,7 +64,8 @@ export default async function RootLayout({
 
   if (process.env.NODE_ENV !== 'development') {
     const session = await auth.api.getSession({ headers: await headers() });
-    if (!session || !isConfiguredOwner(session.user.email)) return <SignIn />;
+    if (!session || !isConfiguredOwner(session.user.email))
+      redirect('/sign-in');
     userId = session.user.id;
     user = {
       name: session.user.name,

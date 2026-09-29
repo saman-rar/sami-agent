@@ -69,12 +69,12 @@ export function NavSessions({
                   side={isMobile ? 'bottom' : 'right'}
                   align={isMobile ? 'end' : 'start'}
                 >
-                  <DropdownMenuItem>
-                    <Link href={href}>
+                  <Link href={href}>
+                    <DropdownMenuItem asChild>
                       <Folder className='text-muted-foreground' />
                       <span>View Project</span>
-                    </Link>
-                  </DropdownMenuItem>
+                    </DropdownMenuItem>
+                  </Link>
 
                   <DropdownMenuItem onClick={() => archiveSession(item.id)}>
                     <Trash2 className='text-muted-foreground' />

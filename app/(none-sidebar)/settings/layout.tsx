@@ -6,6 +6,7 @@ import { SignIn } from '@/components/chat/web-chat-auth';
 import { auth } from '@/lib/auth';
 import { isConfiguredOwner } from '@/lib/persistence/single-owner';
 import { SettingsNav } from './_components/settings-nav';
+import { redirect } from 'next/navigation';
 
 export default async function SettingsLayout({
   children,
@@ -14,7 +15,8 @@ export default async function SettingsLayout({
 }) {
   if (process.env.NODE_ENV !== 'development') {
     const session = await auth.api.getSession({ headers: await headers() });
-    if (!session || !isConfiguredOwner(session.user.email)) return <SignIn />;
+    if (!session || !isConfiguredOwner(session.user.email))
+      redirect('/sign-in');
   }
 
   return (

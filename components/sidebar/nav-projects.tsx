@@ -55,17 +55,16 @@ export function NavProjects({ projects }: { projects: ProjectRecord[] }) {
                 side={isMobile ? 'bottom' : 'right'}
                 align={isMobile ? 'end' : 'start'}
               >
-                <DropdownMenuItem>
-                  <Link href={`/projects/${item.sessionId}`}>
+                <Link href={`/projects/${item.sessionId}`}>
+                  <DropdownMenuItem asChild>
                     <Folder className='text-muted-foreground' />
                     <span>View Project</span>
-                  </Link>
-                </DropdownMenuItem>
+                  </DropdownMenuItem>
+                </Link>
+
                 <DropdownMenuItem>
-                  <Button>
-                    <Trash2 className='text-muted-foreground' />
-                    <span>Delete Project</span>
-                  </Button>
+                  <Trash2 className='text-muted-foreground' />
+                  <span>Delete Project</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

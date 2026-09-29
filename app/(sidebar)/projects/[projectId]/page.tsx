@@ -1,5 +1,5 @@
 import { headers } from 'next/headers';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { AuthenticatedAgentChat } from '@/components/chat/authenticated-agent-chat';
 import { SignIn } from '@/components/chat/web-chat-auth';
 import { auth } from '@/lib/auth';
@@ -18,7 +18,8 @@ export default async function ProjectWorkspacePage({
   let userId = 'local-dev';
   if (process.env.NODE_ENV !== 'development') {
     const session = await auth.api.getSession({ headers: await headers() });
-    if (!session || !isConfiguredOwner(session.user.email)) return <SignIn />;
+    if (!session || !isConfiguredOwner(session.user.email))
+      redirect('/sign-in');
     userId = session.user.id;
   }
 
