@@ -1,0 +1,3 @@
+ALTER TABLE "projects" ADD CONSTRAINT "projects_sessionId_sessions_id_fk" FOREIGN KEY ("sessionId") REFERENCES "public"."sessions"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "sessions" ADD CONSTRAINT "sessions_mode_check" CHECK ("sessions"."agentMode" in ('ask', 'plan', 'build'));--> statement-breakpoint
+ALTER TABLE "agent_todos" ADD CONSTRAINT "todos_status_check" CHECK ("agent_todos"."status" in ('pending', 'in_progress', 'completed'));
